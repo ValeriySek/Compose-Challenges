@@ -1,5 +1,6 @@
 package ru.ozh.compose.challenges.ui.grid
 
+import android.util.Log
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.calculateTargetValue
 import androidx.compose.animation.splineBasedDecay
@@ -13,9 +14,114 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 fun Modifier.drag(state: WatchGridState) = pointerInput(Unit) {
+    detectGestures(
+        state = state,
+    )
+
+//    val decay = splineBasedDecay<Offset>(this)
+//    val tracker = VelocityTracker()
+//    coroutineScope {
+//        forEachGesture {
+//            launch {
+//                awaitPointerEventScope {
+//                    val pointerId = awaitFirstDown(requireUnconsumed = false).id
+//                    launch {
+//                        state.stop()
+//                    }
+//                    tracker.resetTracking()
+//                    var dragPointerInput: PointerInputChange?
+//                    var overSlop = Offset.Zero
+//                    do {
+//                        dragPointerInput = awaitTouchSlopOrCancellation(
+//                            pointerId
+//                        ) { change, over ->
+//                            change.consumePositionChange()
+//                            overSlop = over
+//                        }
+//                        Log.i(
+//                            "TAGG",
+//                            "do dragPointerInput $dragPointerInput  dragPointerInput.positionChangeConsumed() ${dragPointerInput?.positionChangeConsumed()}"
+//                        )
+//                    } while (dragPointerInput != null && !dragPointerInput.positionChangeConsumed())
+//                    Log.i("TAGG", " after do")
+//
+//                    dragPointerInput?.let {
+//
+//                        launch {
+//                            state.snapTo(state.currentOffset.plus(overSlop))
+//                        }
+//
+//                        drag(dragPointerInput.id) { change ->
+//                            val dragAmount = change.positionChange()
+//                            launch {
+//                                state.snapTo(state.currentOffset.plus(dragAmount))
+//                            }
+//                            change.consumePositionChange()
+//                            tracker.addPointerInputChange(change)
+//                        }
+//                    }
+//                }
+//            }
+//
+//            val (velX, velY) = tracker.calculateVelocity()
+//            val velocity = Offset(velX, velY)
+//            val targetOffset = decay.calculateTargetValue(
+//                typeConverter = Offset.VectorConverter,
+//                initialValue = state.currentOffset,
+//                initialVelocity = velocity
+//            )
+//            launch {
+//                state.animateTo(
+//                    offset = targetOffset,
+//                    velocity = velocity,
+//                )
+//            }
+//        }
+//    }
+}
+
+
+suspend fun PointerInputScope.detectGestures(
+    state: WatchGridState,
+//    onTap: ((Offset) -> Unit)?,
+////    dismissGestureEnabled: State<Boolean>,
+//    onDismiss: () -> Boolean
+): Unit = coroutineScope {
+    launch {
+        detectTransformGestures(
+//            onGestureStart = { state.onGestureStart() },
+            onGesture = { centroid, pan, zoom ->
+//                if (state.dismissDragAbsoluteOffsetY == 0f) {
+                launch {
+                    state.onGesture(centroid, pan, zoom)
+//                    }
+                }
+            },
+//            onGestureEnd = { state.onTransformEnd() }
+        )
+    }
+    launch {
+        detectDragGestures(
+            state = state
+        )
+    }
+}
+
+
+private suspend fun PointerInputScope.detectDragGestures(
+    state: WatchGridState,
+//    dismissGestureEnabled: State<Boolean>,
+//    startDragImmediately: () -> Boolean,
+//    onDragStart: (PointerInputChange) -> Unit = {},
+//    onDragEnd: () -> Unit = {},
+//    onDragCancel: () -> Unit = {},
+//    onDrag: (change: PointerInputChange, dragAmount: Offset) -> Unit
+) {
+
     val decay = splineBasedDecay<Offset>(this)
     val tracker = VelocityTracker()
     coroutineScope {
+
         forEachGesture {
             awaitPointerEventScope {
                 val pointerId = awaitFirstDown(requireUnconsumed = false).id
@@ -32,13 +138,18 @@ fun Modifier.drag(state: WatchGridState) = pointerInput(Unit) {
                         change.consumePositionChange()
                         overSlop = over
                     }
+                    Log.i(
+                        "TAGG",
+                        "do dragPointerInput $dragPointerInput  dragPointerInput.positionChangeConsumed() ${dragPointerInput?.positionChangeConsumed()}"
+                    )
                 } while (dragPointerInput != null && !dragPointerInput.positionChangeConsumed())
+                Log.i("TAGG", " after do")
 
                 dragPointerInput?.let {
 
-                    launch {
-                        state.snapTo(state.currentOffset.plus(overSlop))
-                    }
+                launch {
+                    state.snapTo(state.currentOffset.plus(overSlop))
+                }
 
                     drag(dragPointerInput.id) { change ->
                         val dragAmount = change.positionChange()
@@ -50,6 +161,7 @@ fun Modifier.drag(state: WatchGridState) = pointerInput(Unit) {
                     }
                 }
             }
+
 
             val (velX, velY) = tracker.calculateVelocity()
             val velocity = Offset(velX, velY)
@@ -66,4 +178,62 @@ fun Modifier.drag(state: WatchGridState) = pointerInput(Unit) {
             }
         }
     }
+}
+
+
+/**
+ * Simplified version of [androidx.compose.foundation.gestures.detectTransformGestures] which
+ * awaits two pointer downs (instead of one) and starts immediately without considering touch slop.
+ */
+private suspend fun PointerInputScope.detectTransformGestures(
+    onGestureStart: () -> Unit = {},
+    onGestureEnd: () -> Unit = {},
+    onGesture: (centroid: Offset, pan: Offset, zoom: Float) -> Unit
+) {
+    forEachGesture {
+        awaitPointerEventScope {
+            awaitTwoDowns(false)
+            do {
+                val event = awaitPointerEvent()
+                val canceled = event.changes.any { it.positionChangeConsumed() }
+                if (!canceled) {
+                    val zoomChange = event.calculateZoom()
+                    val panChange = event.calculatePan()
+                    val centroid = event.calculateCentroid(useCurrent = false)
+                    if (zoomChange != 1f || panChange != Offset.Zero) {
+                        onGesture(centroid, panChange, zoomChange)
+                    }
+                    event.changes.forEach {
+                        if (it.positionChanged()) {
+                            it.consumeAllChanges()
+                        }
+                    }
+                }
+            } while (!canceled && event.changes.any { it.pressed })
+        }
+    }
+}
+
+private suspend fun AwaitPointerEventScope.awaitTwoDowns(requireUnconsumed: Boolean = true) {
+    var event: PointerEvent
+    var firstDown: PointerId? = null
+    do {
+        event = awaitPointerEvent()
+        var downPointers = if (firstDown != null) 1 else 0
+        event.changes.forEach {
+            val isDown =
+                if (requireUnconsumed) it.changedToDown() else it.changedToDownIgnoreConsumed()
+            val isUp =
+                if (requireUnconsumed) it.changedToUp() else it.changedToUpIgnoreConsumed()
+            if (isUp && firstDown == it.id) {
+                firstDown = null
+                downPointers -= 1
+            }
+            if (isDown) {
+                firstDown = it.id
+                downPointers += 1
+            }
+        }
+        val satisfied = downPointers > 1
+    } while (!satisfied)
 }

@@ -1,5 +1,6 @@
 package ru.ozh.compose.challenges.ui.grid
 
+import android.util.Log
 import androidx.compose.animation.core.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.Saver
@@ -39,14 +40,16 @@ data class WatchGridStateImpl(
         get() = animatable.value
 
     override suspend fun snapTo(offset: Offset) {
-        val x = offset.x.coerceIn(config.overScrollDragRangeHorizontal)
-        val y = offset.y.coerceIn(config.overScrollDragRangeVertical)
+//        val scaledX = config.overScrollDragRangeHorizontal.
+        val x = offset.x.coerceIn(config.overScrollDragRangeHorizontal(scale))
+        val y = offset.y.coerceIn(config.overScrollDragRangeVertical(scale))
         animatable.snapTo(Offset(x, y))
     }
 
     override suspend fun animateTo(offset: Offset, velocity: Offset) {
-        val x = offset.x.coerceIn(config.overScrollRangeHorizontal)
-        val y = offset.y.coerceIn(config.overScrollRangeVertical)
+        Log.i("TAGGG", "config.overScrollRangeHorizontal ${config.overScrollRangeHorizontal(scale)}")
+        val x = offset.x.coerceIn(config.overScrollRangeHorizontal(scale))
+        val y = offset.y.coerceIn(config.overScrollRangeVertical(scale))
         animatable.animateTo(
             initialVelocity = velocity,
             animationSpec = decayAnimationSpec,
@@ -61,13 +64,13 @@ data class WatchGridStateImpl(
     override fun getPositionFor(index: Int): IntOffset {
         val (offsetX, offsetY) = currentOffset
         val (cellX, cellY) = config.cells[index]
-        val rowOffset = if (cellY % 2 != 0) {
-            config.halfItemSizePx
-        } else {
-            0
-        }
-        val x = (cellX * config.itemSizePx) + offsetX.toInt() + rowOffset
-        val y = (cellY * config.itemSizePx) + offsetY.toInt()
+        val x = (cellX * (config.itemSizePx * scale)).toInt() + offsetX.toInt() + (config.itemSizePx * (scale - 1) / 2).toInt()
+        val y = (cellY * (config.itemSizePx * scale)).toInt() + offsetY.toInt() + (config.itemSizePx * (scale - 1) / 2).toInt()
+        if (index == 0)
+            Log.i(
+                "TAGG",
+                "x $x y $y "
+            )
 
         return IntOffset(x, y)
     }
@@ -87,6 +90,39 @@ data class WatchGridStateImpl(
             .coerceIn(minimumValue = 0.5f, maximumValue = 1f)
         return z
     }
+
+    private var _scale by mutableStateOf(ZoomableDefaults.MinScale)
+
+    override var scale: Float
+        get() = _scale
+        set(value) {
+            _scale = value.coerceIn(
+                minimumValue = ZoomableDefaults.MinScale,
+                maximumValue = ZoomableDefaults.MaxScale
+            )
+        }
+    override val onGesture: (centroid: Offset, pan: Offset, zoom: Float) -> Unit = { centroid, pan, zoom ->
+        Log.i("TAGG", "zoom $zoom ")
+        scale *= zoom
+    }
+
+
+//    private fun updateBounds() {
+//        val offsetX = childSize.width * scale - size.width
+//        val offsetY = childSize.height * scale - size.height
+//        boundOffset = IntOffset((offsetX / 2f).roundToInt(), (offsetY / 2f).roundToInt())
+//        val maxX = offsetX.coerceAtLeast(0f) / 2f
+//        val maxY = offsetY.coerceAtLeast(0f) / 2f
+//        _translationX.updateBounds(-maxX, maxX)
+//        _translationY.updateBounds(-maxY, maxY)
+//    }
+}
+
+object ZoomableDefaults {
+
+    const val MinScale = 1f
+
+    const val MaxScale = 2f
 }
 
 @Composable

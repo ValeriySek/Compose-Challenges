@@ -10,6 +10,9 @@ interface WatchGridState {
     val currentOffset: Offset
     val animatable: Animatable<Offset, AnimationVector2D>
     var config: WatchGridConfig
+    var scale: Float
+
+    val onGesture: (centroid: Offset, pan: Offset, zoom: Float) -> Unit
 
     suspend fun snapTo(offset: Offset)
     suspend fun animateTo(offset: Offset, velocity: Offset)

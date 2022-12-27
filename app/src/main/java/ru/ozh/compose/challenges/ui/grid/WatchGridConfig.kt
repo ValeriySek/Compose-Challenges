@@ -1,5 +1,6 @@
 package ru.ozh.compose.challenges.ui.grid
 
+import android.util.Log
 import androidx.compose.ui.unit.IntOffset
 
 class WatchGridConfig(
@@ -20,29 +21,29 @@ class WatchGridConfig(
 
     val halfItemSizePx = itemSizePx / 2
 
-    val contentHeight = ((cells.maxByOrNull { it.y }?.y?.let { y -> y + 1 }) ?: 0).times(itemSizePx)
-    val contentWidth = ((cells.maxByOrNull { it.x }?.x?.let { x -> x + 1 }) ?: 0).times(itemSizePx)
+    fun contentHeight(scale: Float) = ((cells.maxByOrNull { it.y }?.y?.let { y -> y + 1 }) ?: 0).times(itemSizePx * scale)
+    fun contentWidth(scale: Float) = ((cells.maxByOrNull { it.x }?.x?.let { x -> x + 1 }) ?: 0).times(itemSizePx * scale)
 
-    val maxOffsetHorizontal = contentWidth - layoutWidthPx
-    val maxOffsetVertical = contentHeight - layoutHeightPx
+    fun maxOffsetHorizontal(scale: Float) = contentWidth(scale) - layoutWidthPx
+    fun maxOffsetVertical(scale: Float) = contentHeight(scale) - layoutHeightPx
 
     val overScrollDragDistanceHorizontal = layoutWidthPx - itemSizePx
     val overScrollDragDistanceVertical = layoutHeightPx - itemSizePx
 
-    val overScrollDistanceHorizontal = layoutWidthPx / 2 - halfItemSizePx
-    val overScrollDistanceVertical = layoutHeightPx / 2 - halfItemSizePx
+    val overScrollDistanceHorizontal = 0
+    val overScrollDistanceVertical = 0
 
-    val overScrollDragRangeVertical =
-        (-maxOffsetVertical.toFloat() - overScrollDragDistanceVertical)
+    fun overScrollDragRangeVertical(scale: Float) =
+        (-maxOffsetVertical(scale) - overScrollDragDistanceVertical)
             .rangeTo(overScrollDragDistanceVertical.toFloat())
-    val overScrollDragRangeHorizontal =
-        (-maxOffsetHorizontal.toFloat() - overScrollDragDistanceHorizontal)
+    fun overScrollDragRangeHorizontal(scale: Float) =
+        (-maxOffsetHorizontal(scale) - overScrollDragDistanceHorizontal)
             .rangeTo(overScrollDragDistanceHorizontal.toFloat())
 
-    val overScrollRangeVertical =
-        (-maxOffsetVertical.toFloat() - overScrollDistanceVertical)
+    fun overScrollRangeVertical(scale: Float) =
+        (-maxOffsetVertical(scale) - overScrollDistanceVertical)
             .rangeTo(overScrollDistanceVertical.toFloat())
-    val overScrollRangeHorizontal =
-        (-maxOffsetHorizontal.toFloat() - overScrollDistanceHorizontal)
+    fun overScrollRangeHorizontal(scale: Float) =
+        (-maxOffsetHorizontal(scale) - overScrollDistanceHorizontal) // [-800, 0]
             .rangeTo(overScrollDistanceHorizontal.toFloat())
 }

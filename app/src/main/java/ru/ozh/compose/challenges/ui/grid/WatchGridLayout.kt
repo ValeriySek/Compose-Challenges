@@ -1,5 +1,6 @@
 package ru.ozh.compose.challenges.ui.grid
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -38,6 +39,7 @@ fun WatchGridLayout(
     ) { measurables, layoutConstraints ->
 
         val placeables = measurables.map { measurable -> measurable.measure(itemConstraints) }
+        Log.i("TAGG", "iitemComstraints $itemConstraints")
         val cells = placeables.mapIndexed { index, _ ->
             val x = index % rowItemsCount
             val y = (index - x) / rowItemsCount
@@ -56,7 +58,7 @@ fun WatchGridLayout(
         layout(layoutConstraints.maxWidth, layoutConstraints.maxHeight) {
             placeables.forEachIndexed { index, placeable ->
                 val position = state.getPositionFor(index)
-                val scale = state.getScaleFor(position)
+                val scale = state.scale
                 placeable.placeWithLayer(
                     position = position,
                     layerBlock = {
@@ -64,6 +66,8 @@ fun WatchGridLayout(
                         this.scaleY = scale
                     }
                 )
+                Log.i("TAGGGG", " placeable.height ${ placeable.height} ")
+                placeable.height
             }
         }
     }
