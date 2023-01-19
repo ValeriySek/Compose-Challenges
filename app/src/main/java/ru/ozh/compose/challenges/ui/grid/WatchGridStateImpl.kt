@@ -41,15 +41,15 @@ data class WatchGridStateImpl(
 
     override suspend fun snapTo(offset: Offset) {
 //        val scaledX = config.overScrollDragRangeHorizontal.
-        val x = offset.x.coerceIn(config.overScrollDragRangeHorizontal(scale))
-        val y = offset.y.coerceIn(config.overScrollDragRangeVertical(scale))
+        val x = offset.x.coerceIn(config.overScrollDragRangeHorizontal)
+        val y = offset.y.coerceIn(config.overScrollDragRangeVertical)
         animatable.snapTo(Offset(x, y))
     }
 
     override suspend fun animateTo(offset: Offset, velocity: Offset) {
-        Log.i("TAGGG", "config.overScrollRangeHorizontal ${config.overScrollRangeHorizontal(scale)}")
-        val x = offset.x.coerceIn(config.overScrollRangeHorizontal(scale))
-        val y = offset.y.coerceIn(config.overScrollRangeVertical(scale))
+        Log.i("TAGGG", "config.overScrollRangeHorizontal ${config.overScrollRangeHorizontal}")
+        val x = offset.x.coerceIn(config.overScrollRangeHorizontal)
+        val y = offset.y.coerceIn(config.overScrollRangeVertical)
         animatable.animateTo(
             initialVelocity = velocity,
             animationSpec = decayAnimationSpec,
@@ -64,8 +64,8 @@ data class WatchGridStateImpl(
     override fun getPositionFor(index: Int): IntOffset {
         val (offsetX, offsetY) = currentOffset
         val (cellX, cellY) = config.cells[index]
-        val x = (cellX * (config.itemSizePx * scale)).toInt() + offsetX.toInt() + (config.itemSizePx * (scale - 1) / 2).toInt()
-        val y = (cellY * (config.itemSizePx * scale)).toInt() + offsetY.toInt() + (config.itemSizePx * (scale - 1) / 2).toInt()
+        val x = (cellX * (config.itemSizePx * scale)).toInt() + offsetX.toInt() + (config.itemSizePx * (scale - 1) / 2).toInt() + config.itemSizePx / 2
+        val y = (cellY * (config.itemSizePx * scale)).toInt() + offsetY.toInt() + (config.itemSizePx * (scale - 1) / 2).toInt() + config.itemSizePx / 2
         if (index == 0)
             Log.i(
                 "TAGG",
@@ -100,7 +100,10 @@ data class WatchGridStateImpl(
                 minimumValue = ZoomableDefaults.MinScale,
                 maximumValue = ZoomableDefaults.MaxScale
             )
+//            config = config.copy(itemSizePx = (config.itemSizePx * value).toInt())
+//            Log.i("TAGGG", "config.overScrollRangeHorizontal ${config.overScrollRangeHorizontal}")
         }
+
     override val onGesture: (centroid: Offset, pan: Offset, zoom: Float) -> Unit = { centroid, pan, zoom ->
         Log.i("TAGG", "zoom $zoom ")
         scale *= zoom

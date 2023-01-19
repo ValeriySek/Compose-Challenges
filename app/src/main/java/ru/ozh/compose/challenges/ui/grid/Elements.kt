@@ -10,6 +10,9 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonColors
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,6 +27,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ru.ozh.compose.challenges.ui.table.data.Element
+import ru.ozh.compose.challenges.ui.table.data.Elements
 
 @Composable
 fun Icon(
@@ -55,21 +60,37 @@ fun Icon(
 @Composable
 fun Item(
     modifier: Modifier = Modifier,
-    label: String = ""
+    element: Element,
+    onClick: () -> Unit
 ) {
-    Box(
+    Button(
         modifier = modifier
-            .padding(2.dp)
-            .background(color = Color(0xFFEEEEEE)),
-        contentAlignment = Alignment.Center
-
+            .padding(2.dp),
+            onClick = onClick,
+        colors = ButtonDefaults.buttonColors(backgroundColor = Color(getColor(element.elementCategory))),
+        elevation = ButtonDefaults.elevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
     ) {
 
         Text(
-            text = label,
+            text = element.symbol,
 //            fontSize = 40.sp,
-            textAlign = TextAlign.Center)
+            textAlign = TextAlign.Center
+        )
+    }
+}
 
+fun getColor(elementCategory: String): Long {
+    return when (elementCategory) {
+        "reactiveNonmetal" -> 0xFFF27C42
+        "nobleGas" -> 0xFF8B50E8
+        "alkaliMetal" -> 0xFFA04496
+        "alkalineEarthMetal" -> 0xFFE51CEF
+        "metalloid" -> 0xFF4C95EB
+        "postTransitionMetal" -> 0xFF5268DA
+        "transitionMetal" -> 0xFF38DEB6
+        "lanthanide" -> 0xFF58748E
+        "actinide" -> 0xFF58618E
+        else -> 0xFFEEEEEE
     }
 }
 
