@@ -1460,7 +1460,7 @@ object Elements {
             18,
             8,
             A,
-            7,
+            6,
             "p",
             "nobleGas",
             "[Xe] 4f14 5d10 6s2 6p6",

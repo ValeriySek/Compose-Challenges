@@ -25,30 +25,32 @@ fun TableGridLayout(
     content: @Composable () -> Unit
 ) {
 
-    Log.i("TAGGGG", "content $content")
-
     val itemSizePx = with(LocalDensity.current) { itemSize.roundToPx() }
-
-    Box {
-
 
         Layout(
             modifier = modifier.drag(state),
             content = content
         ) { measurables, constraints ->
 
-            measurables.forEach {
-                Log.i("TAGGGG", "measurables $it")
-            }
-
             val itemConstraints = Constraints.fixed(
                 width = (itemSizePx * state.scale).toInt(),
                 height = (itemSizePx * state.scale).toInt()
             )
 
-            val placeables = measurables.map { it.measure(itemConstraints) }
+            val itemPlaceables = measurables.filter { it.layoutId == "Item" }.map { it.measure(itemConstraints) }
+            val verticalAxisPlaceables = measurables.filter { it.layoutId == "VerticalAxis" }.map { it.measure(constraints) }
+            val verticalAxisWidth = verticalAxisPlaceables.maxOf { it.width }
+            val horizontalAxisPlaceables = measurables.filter { it.layoutId == "HorizontalAxis" }.map { it.measure(constraints) }
+            val horizontalAxisWidth = horizontalAxisPlaceables.maxOf { it.height }
+            val boxPlaceable = measurables.firstOrNull { it.layoutId == "Box" }?.measure(constraints)
+
+
             val cells = elements.map {
-                Cell(it.group - 1, it.period - 1)
+                when (it.elementCategory) {
+                    "lanthanide" -> Cell(it.atomicNumber - 55, it.period + 1)
+                    "actinide" -> Cell(it.atomicNumber - 87, it.period + 1)
+                    else -> Cell(it.group - 1, it.period - 1)
+                }
             }.toList()
 
             val config = getConfig(
@@ -60,30 +62,9 @@ fun TableGridLayout(
             state.setup(
                 config
             )
-//        Log.i("TAGGGG", "layoutHeightPx ${config.layoutHeightPx}")
-//        Log.i("TAGGGG", "layoutWidthPx ${config.layoutWidthPx}")
-//        Log.i("TAGGGG", "contentHeight ${config.contentHeight}")
-//        Log.i("TAGGGG", "contentWidth ${config.contentWidth}")
-//        config.itemSizePx = 500
-//        Log.i("TAGGGG", "contentWidth ${config.contentWidth}")
-//        Log.i("TAGGGG", "maxOffsetHorizontal ${config.maxOffsetHorizontal}")
-//        Log.i("TAGGGG", "maxOffsetVertical ${config.maxOffsetVertical}")
-//        Log.i("TAGGGG", "overScrollDragDistanceHorizontal ${config.overScrollDragDistanceHorizontal}")
-//        Log.i("TAGGGG", "overScrollDragDistanceVertical ${config.overScrollDragDistanceVertical}")
-//        Log.i("TAGGGG", "overScrollDistanceHorizontal ${config.overScrollDistanceHorizontal}")
-//        Log.i("TAGGGG", "overScrollDistanceVertical ${config.overScrollDistanceVertical}")
-//        Log.i("TAGGGG", "overScrollDragRangeVertical ${config.overScrollDragRangeVertical}")
-//        Log.i("TAGGGG", "overScrollDragRangeHorizontal ${config.overScrollDragRangeHorizontal}")
-//        Log.i("TAGGGG", "overScrollRangeVertical ${config.overScrollRangeVertical}")
-//        Log.i("TAGGGG", "overScrollRangeHorizontal ${config.overScrollRangeHorizontal}")
 
             layout(constraints.maxWidth, constraints.maxHeight) {
-                placeables.forEachIndexed { index, placeable ->
-//                placeable.place(
-//                    x = cells[index].x * itemSizePx,
-//                    y = cells[index].y * itemSizePx
-//                )
-//                Log.i("TAGG", "layout")
+                itemPlaceables.forEachIndexed { index, placeable ->
                     val position = state.getPositionFor(index)
                     val scale = state.getScaleFor(position)
                     placeable.placeWithLayer(
@@ -94,70 +75,19 @@ fun TableGridLayout(
 //                    }
                     )
                 }
-            }
-        }
-
-        Layout(
-            content = {
-                (1..10).forEach {
-                    Box(modifier = Modifier
-                        .size(50.dp, 100.dp)
-                    ) {
-                        Text(modifier = Modifier.align(alignment = Alignment.Center), text = "$it")
-                    }
-                }
-            },
-            modifier = Modifier
-                .background(Color.White)
-        ) { measurables, constraints ->
-
-            val placeables = measurables.map { it.measure(constraints) }
-
-            val width = placeables.maxOf { it.width }
-
-            layout(width, constraints.maxHeight) {
                 var currentheight = state.currentOffset.y.toInt() + state.config.halfItemSizePx
-                placeables.forEach {
+                verticalAxisPlaceables.forEach {
                     it.place(0, currentheight)
                     currentheight += it.height
                 }
-            }
-        }
-
-        Layout(
-            content = {
-                (1..18).forEach {
-                    Box(
-                        modifier = Modifier
-                            .size(100.dp, 50.dp)
-                    ) {
-                        Text(modifier = Modifier.align(alignment = Alignment.Center), text = "$it")
-                    }
-                }
-            },
-            modifier = Modifier
-                .background(Color.White)
-        ) { measurables, constraints ->
-
-            val placeables = measurables.map { it.measure(constraints) }
-
-            val height = placeables.maxOf { it.height }
-
-            layout(constraints.maxWidth, height) {
                 var currentWidth = state.currentOffset.x.toInt() + state.config.halfItemSizePx
-                placeables.forEach {
+                horizontalAxisPlaceables.forEach {
                     it.place(currentWidth, 0)
                     currentWidth += it.width
                 }
+                boxPlaceable?.place(0,0)
             }
         }
-        Box(
-            modifier = Modifier
-                .size(50.dp)
-                .offset(0.dp, 0.dp)
-                .background(Color.White)
-        )
-    }
 }
 
 fun getConfig(

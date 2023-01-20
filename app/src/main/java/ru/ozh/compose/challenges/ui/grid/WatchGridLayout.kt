@@ -19,6 +19,7 @@ import ru.ozh.compose.challenges.ui.theme.ComposeChallengesTheme
 @Composable
 fun WatchGridLayout(
     modifier: Modifier = Modifier,
+
     rowItemsCount: Int,
     itemSize: Dp,
     state: WatchGridState = rememberWatchGridState(),
